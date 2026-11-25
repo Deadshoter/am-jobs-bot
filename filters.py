@@ -79,6 +79,16 @@ RESUME_RE = re.compile(
 def is_resume(text: str) -> bool:
     return bool(RESUME_RE.search(text or ""))
 
+# --- Похожесть текстов: ловим одну и ту же вакансию с мелкими правками ---
+def words(text: str) -> set:
+    t = (text or "").lower()
+    t = re.sub(r"https?://\S+|#\w+", " ", t)
+    return set(re.findall(r"[a-zа-яёіїєґ0-9@_]{3,}", t))
+
+
+def similarity(a: set, b: set) -> float:
+    return len(a & b) / max(1, min(len(a), len(b)))
+
 
 def is_am_vacancy(text: str) -> bool:
     return bool(text) and bool(AM_RE.search(text))

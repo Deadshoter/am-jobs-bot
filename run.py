@@ -51,6 +51,8 @@ def load_state():
 def save_state(st):
     now = time.time()
     st["seen"] = {k: v for k, v in st["seen"].items() if now - v < SEEN_TTL}
+    st["recent"] = [x for x in st.get("recent", []) if now - x["ts"] < 14 * 24 * 3600][-600:]
+    st["posted"] = [x for x in st.get("posted", []) if now - x["ts"] < 14 * 24 * 3600][-300:]
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(st, f, ensure_ascii=False, indent=0)
 
@@ -111,6 +113,11 @@ def accept(st, text, keys):
     keys = keys + ["fp:" + filters.fingerprint(text)]
     if any(k in st["seen"] for k in keys):
         return False
+    w = filters.words(text)
+    for rec in st.setdefault("recent", []):
+        if filters.similarity(w, set(rec["w"])) >= 0.7:
+            return False  # та же вакансия с мелкими правками
+    st["recent"].append({"ts": time.time(), "w": sorted(w)[:300]})
     t = time.time()
     for k in keys:
         st["seen"][k] = t
@@ -189,6 +196,15 @@ def publish_one(st):
         log.info("Лимит на этот час исчерпан (%d/%d за день). В очереди %d",
                  st["posted_today"], POSTS_PER_DAY, len(st["queue"]))
         return
+    while st["queue"]:
+        wq = filters.words(st["queue"][0]["post"])
+        if any(filters.similarity(wq, set(x["w"])) >= 0.7 for x in st.setdefault("posted", [])):
+            st["queue"].pop(0)  # дубль уже опубликованной вакансии
+            continue
+        break
+    if not st["queue"]:
+        log.info("Очередь пуста")
+        return
     item = st["queue"][0]
     item["post"] = "\n".join(l for l in item["post"].splitlines() if "Источник:" not in l)
     if "🟢" in item["post"] and not filters.is_entry_level(item["post"]):
@@ -209,6 +225,7 @@ def publish_one(st):
     if r.ok:
         st["queue"].pop(0)
         st["posted_today"] += 1
+        st.setdefault("posted", []).append({"ts": time.time(), "w": sorted(filters.words(item["post"]))[:300]})
         log.info("Опубликовано (%d/%d сегодня). В очереди %d",
                  st["posted_today"], POSTS_PER_DAY, len(st["queue"]))
     else:
