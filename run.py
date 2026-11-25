@@ -103,6 +103,8 @@ def accept(st, text, keys):
         return False
     if not filters.has_contact(text):
         return False  # нет контакта для отклика — не публикуем
+    if filters.is_resume(text):
+        return False  # резюме соискателя, а не вакансия
     if filters.is_scam(text):
         log.info("Скам отфильтрован: %s", text[:70].replace("\n", " "))
         return False
@@ -168,6 +170,7 @@ def publish_one(st):
     st["queue"] = [q for q in st["queue"] if is_fresh(q["ts"])
                    and filters.looks_like_vacancy(q["post"])
                    and filters.has_contact(q["post"])
+                   and not filters.is_resume(q["post"])
                    and not ("@reg2bet" in q["post"] and "#r2bwork" not in q["post"].lower())]
     st["queue"].sort(key=lambda q: q["ts"], reverse=True)  # сначала самые свежие
     now = datetime.now(TZ)

@@ -36,7 +36,7 @@ SCAM_RE = re.compile(
 
 # --- Признаки того, что пост — это вакансия, а не статья/новость ---
 VACANCY_RE = re.compile(
-    r"ваканси|vacanc|hiring|we.?re\s+looking|looking\s+for|ищем|ищу|шукаємо|шукаю|требуется|потрібен|"
+    r"ваканси|vacanc|hiring|we.?re\s+looking|looking\s+for|ищем|шукаємо|требуется|потрібен|"
     r"открыта\s+позици|відкрита\s+позиці|зарплат|заробітн|оклад|salary|з/п|зп\s|"
     r"резюме|\bcv\b|откликнуться|відгукнутися|пишите|пиши\s|писать\s|контакт|requirements|обязанности|обов.язки|требования|вимоги",
     re.IGNORECASE,
@@ -59,6 +59,18 @@ def has_contact(text: str) -> bool:
     """Без строки «Источник» — там ссылка на канал, это не контакт."""
     body = "\n".join(l for l in (text or "").splitlines() if "Источник" not in l)
     return bool(CONTACT_RE.search(body))
+
+# --- Резюме соискателей (это не вакансии) ---
+RESUME_RE = re.compile(
+    r"#резюме|#resume|#cv\b|#ищу_?работу|#шукаю_?роботу|ищу\s+работу|шукаю\s+роботу|"
+    r"открыт[аы]?\s+к\s+предложени|відкрит[аи]?\s+до\s+пропозиці|рассмотрю\s+предложени|"
+    r"резюме\s+в\s+pdf|о\s+себе\b|про\s+себе\b|мой\s+опыт|мій\s+досвід|looking\s+for\s+a\s+job|open\s+to\s+work",
+    re.IGNORECASE,
+)
+
+
+def is_resume(text: str) -> bool:
+    return bool(RESUME_RE.search(text or ""))
 
 
 def is_am_vacancy(text: str) -> bool:
