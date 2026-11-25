@@ -19,9 +19,16 @@ AM_RE = re.compile("|".join(AM_PATTERNS), re.IGNORECASE)
 
 # --- Признаки "можно без опыта / джун" ---
 ENTRY_RE = re.compile(
-    r"без\s+опыта|без\s+досвіду|опыт\s+не\s+(?:обязателен|нужен|важен)|"
-    r"досвід\s+не\s+(?:обов|потр)|обучим|навчимо|обучение\s+с\s+нуля|с\s+нуля|"
-    r"стаж[её]р|стажув|intern|junior|джун|trainee|опыт\s+от\s+0|опыт\s+до\s+(?:6|полу)",
+    r"без\s+опыта|без\s+досвіду|опыт\s+не\s+(?:обязателен|нужен|важен)|досвід\s+не\s+(?:обов|потр)|"
+    r"обучим|навчимо|научим|обучение\s+с\s+нуля|навчання\s+з\s+нуля|стаж[её]р|стажув|intern|junior|джун|trainee|опыт\s+от\s+0",
+    re.IGNORECASE,
+)
+# Признаки, что новичков НЕ берут (перебивают ENTRY_RE)
+NOT_ENTRY_RE = re.compile(
+    r"(?:не\s+рассматр\w*|не\s+берём|не\s+берем|не\s+ищем|не\s+подходит)[^.\n]{0,60}(?:без\s+опыта|с\s+нуля|джун|junior|новичк)|"
+    r"без\s+опыта\s+не|"
+    r"опыт\w*\s+(?:работы\s+)?(?:[^.\n]{0,30})?от\s+(?:[1-9]|одного|года|полугода)|от\s+[1-9]\s*(?:\+\s*)?(?:год|лет|мес)|"
+    r"\bsenior\b|\bmiddle\b|\blead\b|наличие\s+(?:собственной\s+|своей\s+)?базы|собственн\w+\s+баз",
     re.IGNORECASE,
 )
 
@@ -82,7 +89,8 @@ def is_scam(text: str) -> bool:
 
 
 def is_entry_level(text: str) -> bool:
-    return bool(ENTRY_RE.search(text or ""))
+    t = text or ""
+    return bool(ENTRY_RE.search(t)) and not NOT_ENTRY_RE.search(t)
 
 
 def fingerprint(text: str) -> str:

@@ -191,6 +191,8 @@ def publish_one(st):
         return
     item = st["queue"][0]
     item["post"] = "\n".join(l for l in item["post"].splitlines() if "Источник:" not in l)
+    if "🟢" in item["post"] and not filters.is_entry_level(item["post"]):
+        item["post"] = "\n".join(l for l in item["post"].splitlines() if "🟢" not in l).replace(" #без_опыта", "")
     if not BOT_TOKEN and not DRY:
         log.warning("Нет BOT_TOKEN. В очереди %d", len(st["queue"]))
         return
