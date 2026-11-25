@@ -46,6 +46,20 @@ VACANCY_RE = re.compile(
 def looks_like_vacancy(text: str) -> bool:
     return bool(VACANCY_RE.search(text or ""))
 
+# --- Есть ли в вакансии контакт для отклика ---
+CONTACT_RE = re.compile(
+    r"(?<![\w/])@[A-Za-z][A-Za-z0-9_]{3,}|t\.me/|telegram\.me/|wa\.me/|"
+    r"[\w.+-]+@[\w-]+\.[a-z]{2,}|"
+    r"\+\d{1,3}[\s()\-]*\d[\d\s()\-]{7,}\d|(?<!\d)0\d{2}[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}(?!\d)",
+    re.IGNORECASE,
+)
+
+
+def has_contact(text: str) -> bool:
+    """Без строки «Источник» — там ссылка на канал, это не контакт."""
+    body = "\n".join(l for l in (text or "").splitlines() if "Источник" not in l)
+    return bool(CONTACT_RE.search(body))
+
 
 def is_am_vacancy(text: str) -> bool:
     return bool(text) and bool(AM_RE.search(text))

@@ -94,7 +94,6 @@ def build_post(body, source_name, source_url, title=""):
         parts.append(f"<b>{html.escape(title)}</b>")
     parts.append(html.escape(body))
     parts.append("")
-    parts.append(f'📌 Источник: <a href="{html.escape(source_url)}">{html.escape(source_name)}</a>')
     parts.append("#вакансия #affiliate_manager" + (" #без_опыта" if entry else ""))
     return "\n".join(parts)
 
@@ -102,6 +101,8 @@ def build_post(body, source_name, source_url, title=""):
 def accept(st, text, keys):
     if not filters.is_am_vacancy(text) or not filters.looks_like_vacancy(text):
         return False
+    if not filters.has_contact(text):
+        return False  # нет контакта для отклика — не публикуем
     if filters.is_scam(text):
         log.info("Скам отфильтрован: %s", text[:70].replace("\n", " "))
         return False
@@ -166,6 +167,7 @@ POST_FROM, POST_TO = 9, 19   # публикуем с 9:00 до 19:00 по Кие
 def publish_one(st):
     st["queue"] = [q for q in st["queue"] if is_fresh(q["ts"])
                    and filters.looks_like_vacancy(q["post"])
+                   and filters.has_contact(q["post"])
                    and not ("@reg2bet" in q["post"] and "#r2bwork" not in q["post"].lower())]
     st["queue"].sort(key=lambda q: q["ts"], reverse=True)  # сначала самые свежие
     now = datetime.now(TZ)
@@ -185,6 +187,7 @@ def publish_one(st):
                  st["posted_today"], POSTS_PER_DAY, len(st["queue"]))
         return
     item = st["queue"][0]
+    item["post"] = "\n".join(l for l in item["post"].splitlines() if "Источник:" not in l)
     if not BOT_TOKEN and not DRY:
         log.warning("Нет BOT_TOKEN. В очереди %d", len(st["queue"]))
         return
