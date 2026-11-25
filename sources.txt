@@ -1,10 +1,16 @@
 # Telegram-источники вакансий. Один канал на строку (@юзернейм или ссылка t.me/...).
 # Строки с # — комментарии. Подходят только публичные каналы.
 
-@aff_arbitrage
 @affiliate_work_bazars
 @affy_hr
 @aff_search
 @cpa_people
 @reg2bet
-@uageek_media
+@aff_job
+@igaming_hunter
+@opento_igaming
+@WorkSpace_1
+@works_affiliate
+@cpa_lenta
+@Arbitrazh_vakansii_rabota
+@jobsnit
