@@ -29,7 +29,7 @@ log = logging.getLogger("bot")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 TARGET = os.environ.get("TARGET_CHANNEL", "@Focus_Affiliate")
 MAX_AGE = timedelta(days=int(os.environ.get("MAX_AGE_DAYS", "7")))
-TZ = ZoneInfo("Europe/Kiev")
+TZ = ZoneInfo("Europe/Kyiv")
 QUIET_FROM, QUIET_TO = 23, 8
 DRY = os.environ.get("DRY_RUN") == "1"
 STATE_FILE = "state.json"
