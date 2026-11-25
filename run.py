@@ -4,8 +4,7 @@
 1. читает Telegram-каналы (через веб-версию t.me/s) и сайты Djinni / Work.ua / Robota.ua;
 2. отбирает вакансии Affiliate Manager, убирает скам, дубли и всё старше 7 дней;
 3. складывает новые в очередь;
-4. публикует ОДНУ вакансию из очереди в канал (то есть максимум 1 пост в 15 минут),
-   ночью (23:00–08:00 по Киеву) не публикует;
+4. публикует до 10 вакансий в день, по одной в час, с 9:00 до 19:00 по Киеву;
 5. сохраняет память бота в state.json.
 """
 import html
@@ -160,20 +159,34 @@ def collect(st):
 
 
 # ---------------- публикация ----------------
+POSTS_PER_DAY = 10
+POST_FROM, POST_TO = 9, 19   # публикуем с 9:00 до 19:00 по Киеву
+
+
 def publish_one(st):
     st["queue"] = [q for q in st["queue"] if is_fresh(q["ts"])
                    and filters.looks_like_vacancy(q["post"])
                    and not ("@reg2bet" in q["post"] and "#r2bwork" not in q["post"].lower())]
-    st["queue"].sort(key=lambda q: q["ts"])
+    st["queue"].sort(key=lambda q: q["ts"], reverse=True)  # сначала самые свежие
+    now = datetime.now(TZ)
+    today = now.strftime("%Y-%m-%d")
+    if st.get("day") != today:
+        st["day"], st["posted_today"] = today, 0
     if not st["queue"]:
         log.info("Очередь пуста")
         return
-    if quiet_now() and not DRY:
-        log.info("Ночь — не публикую. В очереди %d", len(st["queue"]))
+    if not (POST_FROM <= now.hour < POST_TO) and not DRY:
+        log.info("Вне окна 9:00–19:00 — не публикую. В очереди %d", len(st["queue"]))
+        return
+    # одна вакансия в час: к HH:00 должно быть опубликовано (HH-8) вакансий, максимум 10
+    allowed = min(POSTS_PER_DAY, now.hour - POST_FROM + 1)
+    if st["posted_today"] >= allowed and not DRY:
+        log.info("Лимит на этот час исчерпан (%d/%d за день). В очереди %d",
+                 st["posted_today"], POSTS_PER_DAY, len(st["queue"]))
         return
     item = st["queue"][0]
     if not BOT_TOKEN and not DRY:
-        log.warning("Нет BOT_TOKEN — жду, пока его добавят в Secrets. В очереди %d", len(st["queue"]))
+        log.warning("Нет BOT_TOKEN. В очереди %d", len(st["queue"]))
         return
     if DRY:
         print("\n" + "=" * 50 + "\n" + item["post"] + "\n" + "=" * 50)
@@ -187,7 +200,9 @@ def publish_one(st):
     )
     if r.ok:
         st["queue"].pop(0)
-        log.info("Опубликовано. В очереди осталось %d", len(st["queue"]))
+        st["posted_today"] += 1
+        log.info("Опубликовано (%d/%d сегодня). В очереди %d",
+                 st["posted_today"], POSTS_PER_DAY, len(st["queue"]))
     else:
         log.error("Telegram не принял пост: %s", r.text[:300])
 
