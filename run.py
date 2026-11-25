@@ -101,7 +101,7 @@ def build_post(body, source_name, source_url, title=""):
 
 
 def accept(st, text, keys):
-    if not filters.is_am_vacancy(text):
+    if not filters.is_am_vacancy(text) or not filters.looks_like_vacancy(text):
         return False
     if filters.is_scam(text):
         log.info("Скам отфильтрован: %s", text[:70].replace("\n", " "))
@@ -125,6 +125,8 @@ def collect(st):
             ts = p["date"].timestamp() if p["date"] else time.time()
             if not is_fresh(ts):
                 continue
+            if ch.lower() == "reg2bet" and "#r2bwork" not in p["text"].lower():
+                continue  # R2B — медиа: берём только посты с тегом вакансий
             if accept(st, p["text"], ["tg:" + p["id"]]):
                 st["queue"].append({"ts": ts, "post": build_post(p["text"], "@" + ch, p["url"])})
                 added += 1
@@ -159,7 +161,9 @@ def collect(st):
 
 # ---------------- публикация ----------------
 def publish_one(st):
-    st["queue"] = [q for q in st["queue"] if is_fresh(q["ts"])]
+    st["queue"] = [q for q in st["queue"] if is_fresh(q["ts"])
+                   and filters.looks_like_vacancy(q["post"])
+                   and not ("@reg2bet" in q["post"] and "#r2bwork" not in q["post"].lower())]
     st["queue"].sort(key=lambda q: q["ts"])
     if not st["queue"]:
         log.info("Очередь пуста")

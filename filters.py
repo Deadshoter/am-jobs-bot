@@ -34,6 +34,18 @@ SCAM_RE = re.compile(
     re.IGNORECASE,
 )
 
+# --- Признаки того, что пост — это вакансия, а не статья/новость ---
+VACANCY_RE = re.compile(
+    r"ваканси|vacanc|hiring|we.?re\s+looking|looking\s+for|ищем|ищу|шукаємо|шукаю|требуется|потрібен|"
+    r"открыта\s+позици|відкрита\s+позиці|зарплат|заробітн|оклад|salary|з/п|зп\s|"
+    r"резюме|\bcv\b|откликнуться|відгукнутися|пишите|пиши\s|писать\s|контакт|requirements|обязанности|обов.язки|требования|вимоги",
+    re.IGNORECASE,
+)
+
+
+def looks_like_vacancy(text: str) -> bool:
+    return bool(VACANCY_RE.search(text or ""))
+
 
 def is_am_vacancy(text: str) -> bool:
     return bool(text) and bool(AM_RE.search(text))
