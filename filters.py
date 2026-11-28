@@ -89,6 +89,32 @@ def words(text: str) -> set:
 def similarity(a: set, b: set) -> float:
     return len(a & b) / max(1, min(len(a), len(b)))
 
+# --- Дайджесты/подборки и посты со списком многих должностей (не вакансия AM) ---
+DIGEST_RE = re.compile(
+    r"дайджест|digest|подборк\w*\s+ваканси|горячие\s+ваканси|топ\s+ваканси|ваканси[йи]\s+недели|"
+    r"условия\s+размещения|разместить\s+ваканси|по\s+вопросам\s+размещения",
+    re.IGNORECASE,
+)
+OTHER_ROLES = [
+    r"media\s*buyer|медиа\s*баер|медиабайер|\bбаер|\bбайер",
+    r"sales\s*manager|сейлз|продаж",
+    r"\bhr\b|hr[\s\-]*manager|рекрутер|recruiter",
+    r"farmer|фармер",
+    r"tech\s*specialist|техспец|developer|разработчик",
+    r"\bseo\b",
+    r"designer|дизайнер|креативщик",
+    r"copywriter|копирайтер",
+    r"\bsmm\b|контент[\s\-]*менеджер|content\s*manager",
+    r"bizdev|business\s*developer|бизнес[\s\-]*девелопер",
+]
+
+
+def is_digest(text: str) -> bool:
+    t = text or ""
+    if DIGEST_RE.search(t):
+        return True
+    return sum(1 for p in OTHER_ROLES if re.search(p, t, re.IGNORECASE)) >= 4
+
 
 def is_am_vacancy(text: str) -> bool:
     return bool(text) and bool(AM_RE.search(text))
